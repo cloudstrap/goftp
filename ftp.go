@@ -594,6 +594,50 @@ func (ftp *FTP) Retr(path string, retrFn RetrFunc) (s string, err error) {
 	return
 }
 
+// Retr retrieves file from remote host at path, returning an io.ReadCloser,
+// leaving up to the user to decide when to close the connection
+func (ftp *FTP) RetrFrom(path string) (rc io.ReadCloser, err error) {
+	if err = ftp.Type(TypeImage); err != nil {
+		return
+	}
+
+	var port int
+	if port, err = ftp.Pasv(); err != nil {
+		return
+	}
+
+	if err = ftp.send("RETR %s", path); err != nil {
+		return
+	}
+
+	var pconn net.Conn
+	if pconn, err = ftp.newConnection(port); err != nil {
+		return
+	}
+	rc = pconn
+
+	var line string
+	if line, err = ftp.receiveNoDiscard(); err != nil {
+		return
+	}
+
+	if !strings.HasPrefix(line, StatusFileOK) {
+		err = errors.New(line)
+		return
+	}
+
+	if line, err = ftp.receive(); err != nil {
+		return
+	}
+
+	if !strings.HasPrefix(line, StatusClosingDataConnection) {
+		err = errors.New(line)
+		return
+	}
+
+	return
+}
+
 /*func GetFilesList(path string) (files []string, err error) {
 
 }*/
