@@ -1,7 +1,10 @@
 package goftp
 
+import "strings"
+
 // FTP Status codes, defined in RFC 959
 const (
+	StatusFileAlreadyOpen       = "125"
 	StatusFileOK                = "150"
 	StatusOK                    = "200"
 	StatusSystemStatus          = "211"
@@ -14,6 +17,10 @@ const (
 	StatusPathCreated           = "257"
 	StatusActionPending         = "350"
 )
+
+func StatusIsOK(line string) bool {
+	return strings.HasPrefix(line, StatusFileOK) || strings.HasPrefix(line, StatusFileAlreadyOpen)
+}
 
 var statusText = map[string]string{
 	StatusFileOK:                "File status okay; about to open data connection",
